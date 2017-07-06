@@ -1,7 +1,3 @@
-// abcWalletTxLib-btc.js
-import { base16 } from 'rfc4648'
-
-// const random = require('random-js')
 import { txLibInfo } from './txLibInfo.js'
 
 const GAP_LIMIT = 10
@@ -17,34 +13,6 @@ const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
 
 const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 // const baseUrl = 'http://localhost:8080/api/'
-
-export function makeShitcoinPlugin (opts = {}) {
-  const { io } = opts
-
-  return {
-    getInfo: () => {
-      const currencyDetails = txLibInfo.getInfo
-
-      return currencyDetails
-    },
-
-    createMasterKeys: walletType => {
-      if (walletType === 'shitcoin') {
-        const masterPrivateKey = base16.stringify(io.random(8))
-        const masterPublicKey = 'pub' + masterPrivateKey
-        return { masterPrivateKey, masterPublicKey }
-      } else {
-        return null
-      }
-    },
-
-    makeEngine: (keyInfo, opts = {}) => {
-      const abcTxLib = new ABCTxLibTRD(io, keyInfo, opts)
-
-      return abcTxLib
-    }
-  }
-}
 
 class WalletLocalData {
   constructor (jsonString) {
@@ -101,7 +69,7 @@ class ABCTransaction {
   }
 }
 
-class ABCTxLibTRD {
+export class ABCTxLibTRD {
   constructor (io, keyInfo, opts = {}) {
     // dataStore.init(abcTxLibAccess, options, callbacks)
     const { walletLocalFolder, callbacks } = opts
