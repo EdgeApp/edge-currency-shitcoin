@@ -17,7 +17,7 @@ const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 class WalletLocalData {
   constructor (jsonString) {
     this.blockHeight = 0
-    this.totalBalances = { TRD: 0 }
+    this.totalBalances = { TRD: 0, ANA: 0, DOGESHIT: 0, HOLYSHIT: 0 }
 
     // Map of gap limit addresses
     this.gapLimitAddresses = []
@@ -93,6 +93,7 @@ export class ABCTxLibTRD {
   // Private methods
   // *************************************
   engineLoop () {
+    this.doInitialCallbacks()
     this.engineOn = true
     this.blockHeightInnerLoop()
     this.checkAddressesInnerLoop()
@@ -525,6 +526,20 @@ export class ABCTxLibTRD {
             console.log(err)
           })
       }
+    }
+  }
+
+  doInitialCallbacks () {
+    this.abcTxLibCallbacks.onBlockHeightChanged(
+      this.walletLocalData.blockHeight
+    )
+
+    for (const n in TOKEN_CODES) {
+      const currencyCode = TOKEN_CODES[n]
+      this.abcTxLibCallbacks.onTransactionsChanged(
+        this.walletLocalData.transactionsObj[currencyCode]
+      )
+      this.abcTxLibCallbacks.onBalanceChanged(currencyCode, this.walletLocalData.totalBalances[currencyCode])
     }
   }
 
