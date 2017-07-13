@@ -13,17 +13,17 @@ export const txLibInfo = {
       {
         name: 'TRD',
         multiplier: 100000000,
-        symbol: 'Ƀ'
+        symbol: '₴'
       },
       {
         name: 'mTRD',
         multiplier: 100000,
-        symbol: 'mɃ'
+        symbol: 'm₴'
       },
       {
         name: 'shits', // The human readable string to describe the denomination
         multiplier: 100, // The value to multiply the smallest unit of currency to get to the denomination
-        symbol: 'ƀ' // The human readable 1-3 character symbol of the currency, e.g “Ƀ”
+        symbol: 's' // The human readable 1-3 character symbol of the currency, e.g “Ƀ”
       }
     ],
     symbolImage: 'qq/2iuhfiu1/3iufhlq249r8yq34tiuhq4giuhaiwughiuaergih/rg', // Base64 encoded png or jpg image of the currency symbol (optional)
