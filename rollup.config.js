@@ -2,7 +2,7 @@ import babel from 'rollup-plugin-babel'
 const packageJson = require('./package.json')
 
 export default {
-  entry: 'src/abcWalletTxLib-TRD.js',
+  entry: 'src/txLib.js',
   external: Object.keys(packageJson.dependencies),
   plugins: [babel({})],
   targets: [
