@@ -13,12 +13,12 @@ export const txLibInfo = {
       // An array of Objects of the possible denominations for this currency
       {
         name: 'TRD',
-        multiplier: 1000,
+        multiplier: '10000',
         symbol: '₴'
       },
       {
         name: 'mTRD',
-        multiplier: 1,
+        multiplier: '10',
         symbol: 'm₴'
       }
     ],
@@ -31,7 +31,7 @@ export const txLibInfo = {
         denominations: [
           {
             name: 'ANA',
-            multiplier: 100
+            multiplier: '100'
           }
         ]
       },
@@ -41,7 +41,7 @@ export const txLibInfo = {
         denominations: [
           {
             name: 'DOGESHIT',
-            multiplier: 100
+            multiplier: '100'
           }
         ]
       },
@@ -51,7 +51,7 @@ export const txLibInfo = {
         denominations: [
           {
             name: 'HOLYSHIT',
-            multiplier: 100
+            multiplier: '100'
           }
         ]
       }
