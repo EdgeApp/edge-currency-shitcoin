@@ -18,6 +18,7 @@ const PRIMARY_CURRENCY = txLibInfo.getInfo.currencyCode
 const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
 
 const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
+// const baseUrl = 'http://localhost:8080/api/'
 
 let io
 
@@ -50,13 +51,14 @@ async function fetchGetShitcoin (cmd:string, params:string) {
 }
 
 async function fetchPost (cmd:string, body:any) {
-  const response = await io.fetch(baseUrl + cmd, {
+  const jsonStr = JSON.stringify(body)
+  const response = await io.fetch(cmd, {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
     method: 'POST',
-    body: JSON.stringify(body)
+    body: jsonStr
   })
   return response.json()
 }
@@ -455,7 +457,7 @@ class ABCTxLibTRD {
         const p = this.processAddressFromServer(address)
         promiseArray.push(p)
 
-        if (!this.walletLocalData.addressArray[n]) {
+        if (typeof this.walletLocalData.addressArray[n] === 'undefined') {
           this.walletLocalData.addressArray[n] = new AddressObject(address, null)
           this.walletLocalDataDirty = true
         } else {
@@ -488,20 +490,22 @@ class ABCTxLibTRD {
         for (let n = 0; n < arrayAmounts.length; n++) {
           const amountsObj:any = arrayAmounts[n]
           for (const currencyCode:any in amountsObj) {
-            if (!totalBalances[currencyCode]) {
-              totalBalances[currencyCode] = '0'
+            if (this.getTokenStatus(currencyCode)) {
+              if (typeof totalBalances[currencyCode] === 'undefined') {
+                totalBalances[currencyCode] = '0'
+              }
+              const tempVal = totalBalances[currencyCode]
+              const tempVal2 = amountsObj[currencyCode]
+              totalBalances[currencyCode] = bns.add(tempVal, tempVal2)
+              io.console.info(
+                'checkAddressesInnerLoop: ' +
+                currencyCode +
+                ' ' +
+                amountsObj[currencyCode] +
+                ' total:' +
+                totalBalances[currencyCode]
+              )
             }
-            const tempVal = totalBalances[currencyCode]
-            const tempVal2 = amountsObj[currencyCode]
-            totalBalances[currencyCode] = bns.add(tempVal, tempVal2)
-            io.console.info(
-              'checkAddressesInnerLoop: ' +
-              currencyCode +
-              ' ' +
-              amountsObj[currencyCode] +
-              ' total:' +
-              totalBalances[currencyCode]
-            )
           }
         }
         this.walletLocalData.totalBalances = totalBalances
@@ -579,7 +583,7 @@ class ABCTxLibTRD {
     }
 
     if (
-      (txids !== null && txids.length) ||
+      (txids.length) ||
       this.walletLocalData.gapLimitAddresses.indexOf(jsonObj.address) !== -1
     ) {
       // Since this address is "used", make sure the unusedAddressIndex is incremented if needed
@@ -603,7 +607,7 @@ class ABCTxLibTRD {
   }
 
   findTransaction (currencyCode:string, txid:string) {
-    if (this.walletLocalData.transactionsObj[currencyCode] === null) {
+    if (!this.walletLocalData.transactionsObj[currencyCode]) {
       return -1
     }
 
@@ -755,7 +759,7 @@ class ABCTxLibTRD {
   }
 
   // synchronous
-  getTokenStatus (token:string) {
+  getTokenStatus (token:string):boolean {
     return this.walletLocalData.enabledTokens.indexOf(token) !== -1
   }
 
@@ -822,10 +826,10 @@ class ABCTxLibTRD {
 
     let startIndex = 0
     let numEntries = 0
-    if (options === null) {
+    if (!options) {
       return (this.walletLocalData.transactionsObj[currencyCode].slice(0))
     }
-    if (options.startIndex !== null && options.startIndex > 0) {
+    if (typeof options.startIndex !== 'undefined' && options.startIndex > 0) {
       startIndex = options.startIndex
       if (
         startIndex >=
@@ -835,7 +839,7 @@ class ABCTxLibTRD {
           this.walletLocalData.transactionsObj[currencyCode].length - 1
       }
     }
-    if (options.numEntries !== null && options.numEntries > 0) {
+    if (typeof options.numEntries !== 'undefined' && options.numEntries > 0) {
       numEntries = options.numEntries
       if (
         numEntries + startIndex >
@@ -883,7 +887,7 @@ class ABCTxLibTRD {
     let idx = this.findAddress(address)
     if (idx !== -1) {
       const addrObj = this.walletLocalData.addressArray[idx]
-      if (addrObj !== null) {
+      if (typeof addrObj !== 'undefined') {
         if (addrObj.txids && addrObj.txids.length > 0) {
           return true
         }
@@ -907,7 +911,6 @@ class ABCTxLibTRD {
             'properties': {
               'currencyCode': { 'type': 'string' },
               'publicAddress': { 'type': 'string' },
-              'amountSatoshi': { 'type': 'number' },
               'nativeAmount': { 'type': 'string' },
               'destMetadata': { 'type': 'object' },
               'destWallet': { 'type': 'object' }
@@ -935,7 +938,7 @@ class ABCTxLibTRD {
       networkFee = bns.sub(networkFee, '10000')
     } else if (abcSpendInfo.networkFeeOption === 'custom') {
       if (
-        abcSpendInfo.customNetworkFee === null ||
+        !abcSpendInfo.customNetworkFee ||
         bns.lt(abcSpendInfo.customNetworkFee, '0')
       ) {
         throw (new Error('Invalid custom fee'))
@@ -967,21 +970,20 @@ class ABCTxLibTRD {
       let nativeAmount = '0'
       if (typeof spendTarget.nativeAmount === 'string') {
         nativeAmount = spendTarget.nativeAmount
-      } else if (typeof spendTarget.amountSatoshi === 'number') {
-        nativeAmount = spendTarget.toString()
       } else {
         throw (new Error('Error: no amount specified'))
       }
 
       let currencyCode = PRIMARY_CURRENCY
-      if (spendTarget.currencyCode !== null) {
+      if (typeof spendTarget.currencyCode !== 'undefined') {
         currencyCode = spendTarget.currencyCode
       }
-      if (!totalSpends[currencyCode]) {
+      if (typeof totalSpends[currencyCode] === 'undefined') {
         totalSpends[currencyCode] = '0'
       }
       const tempVal = totalSpends[currencyCode]
-      totalSpends[currencyCode] = bns.add(tempVal, nativeAmount)
+      const tempVal2 = bns.add(tempVal, nativeAmount)
+      totalSpends[currencyCode] = tempVal2
       outputs.push({
         currencyCode,
         address: spendTarget.publicAddress,
@@ -991,12 +993,15 @@ class ABCTxLibTRD {
     const tempVal = totalSpends[PRIMARY_CURRENCY]
     totalSpends[PRIMARY_CURRENCY] = bns.add(tempVal, networkFee)
 
-    for (const n in totalSpends) {
-      const totalSpend = totalSpends[n]
+    for (let currencyCode of this.walletLocalData.enabledTokens) {
+      const totalSpend = totalSpends[currencyCode]
+      if (typeof totalSpend === 'undefined') {
+        continue
+      }
       // XXX check if spends exceed totals
-      const tempVal = this.walletLocalData.totalBalances[n]
+      const tempVal = this.walletLocalData.totalBalances[currencyCode]
       if (bns.gt(totalSpend, tempVal)) {
-        io.console.error('Error: insufficient balance for token:' + n)
+        io.console.error('Error: insufficient balance for token:' + currencyCode)
         throw (InsufficientFundsError)
       }
     }
@@ -1011,39 +1016,42 @@ class ABCTxLibTRD {
       this.walletLocalData.unusedAddressIndex
     )
 
-    for (let currencyCode in totalSpends) {
+    for (let currencyCode of this.walletLocalData.enabledTokens) {
+      if (typeof totalSpends[currencyCode] === 'undefined') {
+        continue
+      }
+      if (typeof totalInputAmounts[currencyCode] === 'undefined') {
+        totalInputAmounts[currencyCode] = '0'
+      }
       for (let addressObj of addressArray) {
-        if (addressObj.amounts && addressObj.amounts[currencyCode] > 0) {
-          if (totalInputAmounts[currencyCode] === null) {
-            totalInputAmounts[currencyCode] = '0'
-          }
+        if (addressObj.amounts && bns.gt(addressObj.amounts[currencyCode], '0')) {
           const tempVal = totalInputAmounts[currencyCode]
           const tempVal2 = addressObj.amounts[currencyCode]
           totalInputAmounts[currencyCode] =
             bns.add(tempVal, tempVal2)
-          let amt = '0'
           if (addressObj && addressObj.amounts) {
             inputs.push({
               currencyCode,
               address: addressObj.address,
-              amount: amt
+              amount: addressObj.amounts[currencyCode]
             })
           }
         }
-        if (totalInputAmounts[currencyCode] >= totalSpends[currencyCode]) {
+        if (bns.gte(totalInputAmounts[currencyCode], totalSpends[currencyCode])) {
           break
         }
       }
 
-      if (totalInputAmounts[currencyCode] < totalSpends[currencyCode]) {
+      if (bns.lt(totalInputAmounts[currencyCode], totalSpends[currencyCode])) {
         io.console.error('Error: insufficient balance for token:' + currencyCode)
         throw (InsufficientFundsError)
       }
-      if (totalInputAmounts[currencyCode] > totalSpends[currencyCode]) {
+      if (bns.gt(totalInputAmounts[currencyCode], totalSpends[currencyCode])) {
+        const changeAmt = bns.sub(totalInputAmounts[currencyCode], totalSpends[currencyCode])
         outputs.push({
           currencyCode,
           address: changeAddress,
-          amount: totalInputAmounts[currencyCode] - totalSpends[currencyCode]
+          amount: changeAmt
         })
       }
     }
@@ -1081,7 +1089,8 @@ class ABCTxLibTRD {
       abcTransaction.date = jsonObj.txDate
       return (abcTransaction)
     } catch (err) {
-      throw (new Error('Error: broadcastTx failed'))
+      io.console.error('Error: broadcastTx failed')
+      throw new Error(err)
     }
   }
 
