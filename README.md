@@ -12,17 +12,14 @@ Since this package is not on NPM, you will have to do things manually:
 
     ```
     cd airbitz-currency-shitcoin
-    yarn
-    yarn build
-    yarn link # optional
+    npm install
     ```
 
 3. Add to your project's `package.json` like:
 
     ```
     cd ../your-project
-    yarn add 'file:../airbitz-currency-shitcoin'
-    yarn link airbitz-currency-shitcoin # optional
+    npm install 'file:../airbitz-currency-shitcoin'
     ```
 
 Please note that the final step, `yarn link`, breaks the React Native packager. If that's your platform, just skip it. You'll have to manually update `node_modules` if the shitcoin library changes.
@@ -34,9 +31,9 @@ This package uses rollup.js to bundle its sources. If you would like to avoid ha
 Initialize the plugin:
 
 ```
-import { makeShitcoinPlugin } from `airbitz-currency-shitcoin`
+import { makePlugin } from `airbitz-currency-shitcoin`
 
-const shitcoinPlugin = makeShitcoinPlugin({
+const shitcoinPlugin = makePlugin({
   io: yourPlatformSpecifcIo
 })
 ```
