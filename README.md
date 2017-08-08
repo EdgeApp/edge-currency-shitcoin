@@ -57,7 +57,9 @@ The CLI mobile app uses React Native and iOS/Android. As of 2017-08-08, you will
 
     npm install -g create-react-native-app
 
-Launch the xcode workspace in `airbitz-cli-react-native/ios` to launch the CLI tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
+Launch Xcode and open the project `airbitz-cli-react-native/ios/airbitz_cli.xcodeproj`.
+
+Run the app in the simulator by clicking the Play button on xcode. You'll then have a mobile app launch in the simulator with a command line prompt to execute CLI commands. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
 
 Example CLI commands:
 
