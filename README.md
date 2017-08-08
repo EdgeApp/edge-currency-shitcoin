@@ -44,9 +44,9 @@ The following instructions are for those looking to develop this library or use 
     git clone git@github.com:Airbitz/airbitz-currency-shitcoin.git
     cd airbitz-currency-shitcoin
     npm install
-    cd airbitz-cli
+    cd ../airbitz-cli
     npm install
-    cd airbitz-cli-react-native
+    cd ../airbitz-cli-react-native
     npm install
     npm run updot
     ```
