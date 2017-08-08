@@ -1,6 +1,6 @@
 /* global */
 
-export const txLibInfo = {
+export const currencyInfoTRD = {
   supportedTokens: [ 'ANA', 'DOGESHIT', 'HOLYSHIT' ],
 
   getInfo: { // Details of supported currency

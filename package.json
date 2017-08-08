@@ -13,8 +13,8 @@
     "changelog.md",
     "lib/*"
   ],
-  "main": "./lib/abc-shitcoin.js",
-  "module": "./lib/abc-shitcoin.es.js",
+  "main": "./lib/indexShitcoin.js",
+  "module": "./lib/indexShitcoin.es.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:Airbitz/airbitz-currency-shitcoin.git"

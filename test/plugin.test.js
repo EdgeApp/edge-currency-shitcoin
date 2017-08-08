@@ -1,5 +1,5 @@
 /* global describe it */
-const { ShitcoinPlugin } = require('../lib/abc-shitcoin')
+const { ShitcoinPlugin } = require('../lib/indexShitcoin.js')
 const assert = require('assert')
 
 const io = {
@@ -11,7 +11,7 @@ const io = {
 describe('Plugin', function () {
   it('Get currency info', function () {
     ShitcoinPlugin.makePlugin(io).then((shitcoinPlugin) => {
-      assert.equal(shitcoinPlugin.getInfo().currencyCode, 'TRD')
+      assert.equal(shitcoinPlugin.currencyInfo.currencyCode, 'TRD')
     })
   })
 

@@ -1,9 +1,10 @@
-/** Created by Paul Puey 7/7/17 */
+/**
+ * Created by paul on 8/7/17.
+ */
 // @flow
 
-import { txLibInfo } from './txLibInfo.js'
+import { currencyInfoTRD } from './currencyInfoTRD.js'
 import { validate } from 'jsonschema'
-import { base16 } from 'rfc4648'
 import { bns } from 'biggystring'
 
 const GAP_LIMIT = 10
@@ -14,8 +15,8 @@ const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
 const SAVE_DATASTORE_MILLISECONDS = 10000
 
-const PRIMARY_CURRENCY = txLibInfo.getInfo.currencyCode
-const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
+const PRIMARY_CURRENCY = currencyInfoTRD.getInfo.currencyCode
+const TOKEN_CODES = [PRIMARY_CURRENCY].concat(currencyInfoTRD.supportedTokens)
 
 const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 // const baseUrl = 'http://localhost:8080/api/'
@@ -66,31 +67,6 @@ async function fetchPost (cmd:string, body:any) {
 async function fetchPostShitcoin (cmd:string, body:any) {
   const url = baseUrl + cmd
   return fetchPost(url, body)
-}
-
-class ShitcoinPlugin {
-  static async makePlugin (opts:any) {
-    io = opts.io
-
-    return {
-      getInfo: function () {
-        return txLibInfo.getInfo
-      },
-      createMasterKeys: function (walletType:string) {
-        if (walletType === 'shitcoin') {
-          const masterPrivateKey = base16.stringify(io.random(8))
-          const masterPublicKey = 'pub' + masterPrivateKey
-          return { masterPrivateKey, masterPublicKey }
-        } else {
-          return null
-        }
-      },
-      makeEngine: function (keyInfo:any, opts:any = {}) {
-        const engine = new ABCTxLibTRD(io, keyInfo, opts)
-        return engine
-      }
-    }
-  }
 }
 
 class AddressObject {
@@ -195,7 +171,7 @@ class ABCTransaction {
   }
 }
 
-class ABCTxLibTRD {
+export class ShitcoinEngine {
   io:any
   keyInfo:any
   abcTxLibCallbacks:any
@@ -209,10 +185,10 @@ class ABCTxLibTRD {
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
 
-  constructor (io:any, keyInfo:any, opts:any) {
+  constructor (_io:any, keyInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
 
-    this.io = io
+    io = _io
     this.keyInfo = keyInfo
     this.abcTxLibCallbacks = callbacks
     this.walletLocalFolder = walletLocalFolder
@@ -693,7 +669,7 @@ class ABCTxLibTRD {
   // Public methods
   // *************************************
 
-  async startEngine (opts = {}) {
+  async startEngine (opts:any = {}) {
     let newData = false
     if (opts.resetData === 'true') {
       newData = true
@@ -1099,5 +1075,3 @@ class ABCTxLibTRD {
     this.addTransaction(abcTransaction.currencyCode, abcTransaction)
   }
 }
-
-export { ShitcoinPlugin }
