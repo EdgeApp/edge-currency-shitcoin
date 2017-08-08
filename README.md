@@ -1,6 +1,6 @@
 # Airbitz Shitcoin Currency Plugin
 
-Implement shitcoin transactions against the [airbitz-shitcoin-server](https://github.com/Airbitz/airbitz-shitcoin-server).
+Implement Shitcoin transactions using the Airbitz currency plugin API
 The API can be found [here](https://developer.airbitz.co/javascript/#currency-plugin-api)
 
 ## Installing
@@ -8,34 +8,46 @@ The API can be found [here](https://developer.airbitz.co/javascript/#currency-pl
 Since this package is not on NPM, you will have to do things manually:
 
 1. Clone this project into a directory next to your project.
-2. Install dependencies & build the shitcoin library:
-
-    ```
-    cd airbitz-currency-shitcoin
-    npm install
-    ```
-
-3. Add to your project's `package.json` like:
+2. Add to your project's `package.json`:
 
     ```
     cd ../your-project
-    npm install 'file:../airbitz-currency-shitcoin'
+    npm install git+ssh://git@github.com/Airbitz/airbitz-currency-shitcoin.git
     ```
-
-Please note that the final step, `yarn link`, breaks the React Native packager. If that's your platform, just skip it. You'll have to manually update `node_modules` if the shitcoin library changes.
-
-This package uses rollup.js to bundle its sources. If you would like to avoid having to re-build every time you test something (particularly when running the CLI tool), simply rename `lib/` to `src/` in the `main` and `module` properties of `package.json`.
-
 ## Usage
 
 Initialize the plugin:
 
 ```
-import { makePlugin } from `airbitz-currency-shitcoin`
+import { ShitcoinPlugin } from `airbitz-currency-shitcoin`
 
-const shitcoinPlugin = makePlugin({
+ShitcoinPlugin.makePlugin({
   io: yourPlatformSpecifcIo
+}).then(shitcoinPlugin => {
+
 })
 ```
 
 Now you can pass `shitcoinPlugin` to `airbitz-core-js`.
+
+
+## Developing the library
+
+1. Install cli-tool, dependencies, & build the library:
+
+    ```
+    git clone git@github.com:Airbitz/airbitz-cli.git
+    git clone git@github.com:Airbitz/airbitz-cli-react-native.git
+    git clone git@github.com:Airbitz/airbitz-currency-shitcoin.git
+    cd airbitz-currency-shitcoin
+    npm install
+    cd airbitz-cli
+    npm install
+    cd airbitz-cli-react-native
+    npm install
+    npm run updot
+    ```
+
+Updot is a tool to copy needed files from peer dependencies into the node_modules of the project it is run in. This replaces the need for `npm link` which is broken in React Native.
+
+Launch the xcode project in `airbitz-cli-react-native/ios` to launch the cli tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
