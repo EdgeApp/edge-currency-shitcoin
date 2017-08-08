@@ -12,14 +12,15 @@ Since this package is not on NPM, you will have to do things manually:
 
     ```
     cd ../your-project
-    npm install git+ssh://git@github.com/Airbitz/airbitz-currency-shitcoin.git
+    npm install git+ssh://git@github.com/Airbitz/airbitz-currency-dash.git
     ```
+
 ## Usage
 
 Initialize the plugin:
 
 ```
-import { ShitcoinPlugin } from `airbitz-currency-shitcoin`
+import { ShitcoinPlugin } from `airbitz-currency-dash`
 
 ShitcoinPlugin.makePlugin({
   io: yourPlatformSpecifcIo
@@ -32,6 +33,8 @@ Now you can pass `shitcoinPlugin` to `airbitz-core-js`.
 
 
 ## Developing the library
+
+The following instructions are for those looking to develop this library or use it as a template to build a new currency-plugin for Airbitz.
 
 1. Install cli-tool, dependencies, & build the library:
 
@@ -48,6 +51,25 @@ Now you can pass `shitcoinPlugin` to `airbitz-core-js`.
     npm run updot
     ```
 
-Updot is a tool to copy needed files from peer dependencies into the node_modules of the project it is run in. This replaces the need for `npm link` which is broken in React Native.
+`updot` is a tool to copy needed files from peer dependencies into the node_modules of the project it is run in. This replaces the need for `npm link` which is broken in React Native. In this setup, it will copy `airbitz-cli` and `airbitz-currency-shitcoin` into `airbitz-cli-react-native/node_modules`. During development, run `npm run updot` after making any changes to `airbitz-currency-shitcoin` or `airbitz-cli`
 
-Launch the xcode project in `airbitz-cli-react-native/ios` to launch the cli tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
+The CLI mobile app uses React Native and iOS/Android. As of 2017-08-08, you will need to use iOS/Xcode to run the CLI tool. Install React Native first:
+
+    npm install -g create-react-native-app
+
+Launch the xcode workspace in `airbitz-cli-react-native/ios` to launch the CLI tool. CLI command documentation can be seen by running `airbitz-cli help` from within the `airbitz-cli` project directory.
+
+Example CLI commands:
+
+| Command | Description |
+| --- | --- |
+| `tx-info shitcoin` | Get the `currencyInfo` object from the plugin |
+| `tx-make-engine shitcoin shitcoin` | Call makeEngine() method of the shitcoin plugin and createMasterKeys() with a `shitcoin` walletType |
+| `tx-start-engine` | Call startEngine() method of the plugin called in `tx-make-engine` |
+| `tx-balance DASH` | Call getBalance('TRD') |
+| `tx-get-address` | Call getAddress() |
+| `tx-spend 3_pub1091290ur28u3t 15000 TRD` | Spend 1.5 shitcoin to given address |
+| `tx-transactions` | Call getTransactions() |
+
+These CLI commands can be used to test the actual routines exported by the currency-plugin
+
