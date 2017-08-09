@@ -116,7 +116,7 @@ class ShitcoinPlugin {
           let queryString: string = ''
 
           if (obj.nativeAmount) {
-            let currencyCode: string = 'ETH'
+            let currencyCode: string = 'TRD'
             if (typeof obj.currencyCode === 'string') {
               currencyCode = obj.currencyCode
             }
