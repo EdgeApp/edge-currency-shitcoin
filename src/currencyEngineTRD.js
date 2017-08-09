@@ -3,7 +3,7 @@
  */
 // @flow
 
-import { currencyInfoTRD } from './currencyInfoTRD.js'
+import { txLibInfo } from './currencyInfoTRD.js'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
 
@@ -15,8 +15,8 @@ const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
 const SAVE_DATASTORE_MILLISECONDS = 10000
 
-const PRIMARY_CURRENCY = currencyInfoTRD.getInfo.currencyCode
-const TOKEN_CODES = [PRIMARY_CURRENCY].concat(currencyInfoTRD.supportedTokens)
+const PRIMARY_CURRENCY = txLibInfo.getInfo.currencyCode
+const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
 
 const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 // const baseUrl = 'http://localhost:8080/api/'

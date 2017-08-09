@@ -22,7 +22,8 @@
   "dependencies": {
     "biggystring": "^1.0.3",
     "jsonschema": "^1.1.1",
-    "rfc4648": "^0.9.1"
+    "rfc4648": "^0.9.1",
+    "uri-js": "^3.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
