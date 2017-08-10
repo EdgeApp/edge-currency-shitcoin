@@ -93,7 +93,11 @@ class ShitcoinPlugin {
         const amountStr = getParameterByName('amount', uri)
         if (amountStr && typeof amountStr === 'string') {
           amount = parseFloat(amountStr)
-          let multiplier: string | number = getDenomInfo('TRD').multiplier
+          const denom = getDenomInfo('TRD')
+          if (!denom) {
+            throw new Error('InternalErrorInvalidCurrencyCode')
+          }
+          let multiplier: string | number = denom.multiplier
           if (typeof multiplier !== 'string') {
             multiplier = multiplier.toString()
           }
@@ -120,7 +124,11 @@ class ShitcoinPlugin {
             if (typeof obj.currencyCode === 'string') {
               currencyCode = obj.currencyCode
             }
-            let multiplier: string | number = getDenomInfo(currencyCode).multiplier
+            const denom = getDenomInfo(currencyCode)
+            if (!denom) {
+              throw new Error('InternalErrorInvalidCurrencyCode')
+            }
+            let multiplier: string | number = denom.multiplier
             if (typeof multiplier !== 'string') {
               multiplier = multiplier.toString()
             }

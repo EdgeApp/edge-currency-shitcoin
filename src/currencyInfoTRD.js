@@ -1,4 +1,5 @@
 /* global */
+// @flow
 
 export const txLibInfo = {
   supportedTokens: [ 'ANA', 'DOGESHIT', 'HOLYSHIT' ],

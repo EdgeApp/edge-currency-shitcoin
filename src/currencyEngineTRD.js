@@ -86,7 +86,7 @@ class WalletLocalData {
   totalBalances: any
   enabledTokens:Array<string>
   gapLimitAddresses:Array<string>
-  transactionsObj:{}
+  transactionsObj:any
   transactionsToFetch:Array<string>
   addressArray:Array<AddressObject>
   unusedAddressIndex:number
@@ -347,9 +347,9 @@ export class ShitcoinEngine {
     //
 
     // Iterate through all the inputs and see if any are in our wallet
-    let spendAmounts:Array<string> = []
-    let receiveAmounts:Array<string> = []
-    let nativeAmounts:Array<string> = []
+    let spendAmounts:any = {}
+    let receiveAmounts:any = {}
+    let nativeAmounts:any = {}
 
     const inputs = jsonObj.inputs
     const outputs = jsonObj.outputs
@@ -357,7 +357,8 @@ export class ShitcoinEngine {
     const otherParams = new ShitcoinParams(inputs, outputs)
 
     for (const currencyCode of TOKEN_CODES) {
-      receiveAmounts[currencyCode] = spendAmounts[currencyCode] = '0'
+      receiveAmounts[currencyCode] = '0'
+      spendAmounts[currencyCode] = '0'
 
       for (let input of inputs) {
         const addr = input.address
