@@ -66,7 +66,7 @@ Example CLI commands:
 | Command | Description |
 | --- | --- |
 | `tx-info shitcoin` | Get the `currencyInfo` object from the plugin |
-| `tx-make-engine shitcoin shitcoin` | Call makeEngine() method of the shitcoin plugin and createMasterKeys() with a `shitcoin` walletType |
+| `tx-make-engine shitcoin 'wallet:shitcoin'` | Call makeEngine() method of the shitcoin plugin and createMasterKeys() with a `wallet:shitcoin` walletType |
 | `tx-start-engine` | Call startEngine() method of the plugin called in `tx-make-engine` |
 | `tx-balance DASH` | Call getBalance('TRD') |
 | `tx-get-address` | Call getAddress() |

@@ -6,7 +6,7 @@ export const txLibInfo = {
 
   getInfo: { // Details of supported currency
     walletTypes: [
-      'shitcoin'
+      'wallet:shitcoin'
     ],
     currencyName: 'Shitcoin',
     currencyCode: 'TRD', // The 3 character code for the currency
