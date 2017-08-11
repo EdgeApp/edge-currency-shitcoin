@@ -19,6 +19,34 @@ describe('Plugin', function () {
   })
 })
 
+describe('derivePublicKey', function () {
+  it('Valid private key', function () {
+    const walletInfo = plugin.derivePublicKey({
+      type: 'shitcoin',
+      keys: {'masterPrivateKey': '12345678abcd'}
+    })
+    assert.equal(walletInfo.keys.masterPublicKey.toLowerCase(), 'pub12345678abcd'.toLowerCase())
+  })
+
+  it('Invalid key name', function () {
+    assert.throws(() => {
+      plugin.derivePublicKey({
+        type: 'shitcoin',
+        keys: {'masterPrivateKeyz': '12345678abcd'}
+      })
+    })
+  })
+
+  it('Invalid wallet type', function () {
+    assert.throws(() => {
+      plugin.derivePublicKey({
+        type: 'shitzcoin',
+        keys: {'masterPrivateKey': '12345678abcd'}
+      })
+    })
+  })
+})
+
 describe('parseUri', function () {
   it('address only', function () {
     const parsedUri = plugin.parseUri('0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')

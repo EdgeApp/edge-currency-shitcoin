@@ -53,8 +53,41 @@ class ShitcoinPlugin {
     return {
       currencyInfo: txLibInfo.getInfo,
 
+      createPrivateKey: (walletType: string) => {
+        const type = walletType.replace('wallet:', '')
+
+        if (type === 'shitcoin') {
+          const masterPrivateKey = base16.stringify(io.random(8))
+          return {
+            type: walletType,
+            keys: { masterPrivateKey }
+          }
+        } else {
+          throw new Error('InvalidWalletType')
+        }
+      },
+
+      derivePublicKey: (walletInfo: any) => {
+        const type = walletInfo.type.replace('wallet:', '')
+        let info = walletInfo
+
+        if (type === 'shitcoin') {
+          if (!walletInfo.keys.masterPrivateKey) {
+            throw new Error('InvalidKeysError')
+          }
+          const masterPublicKey = 'pub' + walletInfo.keys.masterPrivateKey
+          delete info.keys.masterPrivateKey
+          info.keys.masterPublicKey = masterPublicKey
+          return info
+        } else {
+          throw new Error('InvalidWalletType')
+        }
+      },
+
+      // XXX Deprecated. To be removed once Core supports createPrivateKey and derivePublicKey -paulvp
       createMasterKeys: function (walletType:string) {
-        if (walletType === 'shitcoin') {
+        const type = walletType.replace('wallet:', '')
+        if (type === 'shitcoin') {
           const masterPrivateKey = base16.stringify(io.random(8))
           const masterPublicKey = 'pub' + masterPrivateKey
           return { masterPrivateKey, masterPublicKey }
