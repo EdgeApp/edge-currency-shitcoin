@@ -1,10 +1,15 @@
 /* global describe it */
 const { ShitcoinPlugin } = require('../lib/indexShitcoin.js')
+const { bns } = require('biggystring')
 const assert = require('assert')
 
 const io = {
   random (size) {
-    return new Array(size)
+    const out = []
+    for (let i = 0; i < size; i++) {
+      out.push(i)
+    }
+    return out
   }
 }
 
@@ -12,10 +17,35 @@ let plugin
 
 describe('Plugin', function () {
   it('Get currency info', function () {
-    ShitcoinPlugin.makePlugin(io).then((shitcoinPlugin) => {
+    ShitcoinPlugin.makePlugin({io}).then((shitcoinPlugin) => {
       assert.equal(shitcoinPlugin.currencyInfo.currencyCode, 'TRD')
       plugin = shitcoinPlugin
     })
+  })
+  it('Get block height', function () {
+    ShitcoinPlugin.makePlugin({io}).then((shitcoinPlugin) => {
+      const walletInfoPrivate = shitcoinPlugin.createPrivateKey('wallet:shitcoin')
+      const walletInfoPublic = shitcoinPlugin.derivePublicKey(walletInfoPrivate)
+      const keys = Object.assign({}, walletInfoPrivate.keys, walletInfoPublic.keys)
+      const walletInfo = walletInfoPublic
+      walletInfo.keys = keys
+      const engine = shitcoinPlugin.makeEngine(walletInfo)
+
+      engine.startEngine()
+      const height = engine.getBlockHeight()
+      const success = (height === '0' || bns.gt(height, '100000'))
+
+      assert.equal(success, true)
+    })
+  })
+})
+
+describe('createPrivateKey', function () {
+  it('Create valid key', function () {
+    const walletInfo = plugin.createPrivateKey('wallet:shitcoin')
+    assert.equal(!walletInfo.keys, false)
+    assert.equal(typeof walletInfo.keys.masterPrivateKey, 'string')
+    assert.equal(walletInfo.keys.masterPrivateKey, '0001020304050607')
   })
 })
 

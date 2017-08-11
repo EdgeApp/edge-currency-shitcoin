@@ -69,15 +69,17 @@ class ShitcoinPlugin {
 
       derivePublicKey: (walletInfo: any) => {
         const type = walletInfo.type.replace('wallet:', '')
-        let info = walletInfo
-
         if (type === 'shitcoin') {
-          if (!walletInfo.keys.masterPrivateKey) {
-            throw new Error('InvalidKeysError')
+          let info = Object.assign({}, walletInfo)
+          let keys = Object.assign({}, walletInfo.keys)
+
+          if (typeof keys.masterPrivateKey !== 'string') {
+            throw new Error('InvalidKeyName')
           }
-          const masterPublicKey = 'pub' + walletInfo.keys.masterPrivateKey
-          delete info.keys.masterPrivateKey
-          info.keys.masterPublicKey = masterPublicKey
+          const masterPublicKey = 'pub' + keys.masterPrivateKey
+          delete keys.masterPrivateKey
+          keys.masterPublicKey = masterPublicKey
+          info.keys = keys
           return info
         } else {
           throw new Error('InvalidWalletType')
