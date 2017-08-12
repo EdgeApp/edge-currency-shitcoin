@@ -51,6 +51,7 @@ class ShitcoinPlugin {
     io = opts.io
 
     return {
+      pluginName: 'shitcoin',
       currencyInfo: txLibInfo.getInfo,
 
       createPrivateKey: (walletType: string) => {
