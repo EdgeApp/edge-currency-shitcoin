@@ -1,77 +1,96 @@
 /* global describe it */
 const { ShitcoinPlugin } = require('../lib/indexShitcoin.js')
-const { bns } = require('biggystring')
 const assert = require('assert')
 
 const io = {
   random (size) {
     const out = []
     for (let i = 0; i < size; i++) {
-      out.push(i)
+      const rand = (((i + 23) * 38239875) / (i + 481)) % 255
+      out.push(rand)
     }
     return out
+  },
+  console: {
+    info: console.log,
+    warn: console.log,
+    error: console.log
   }
 }
 
-let plugin
+function makePlugin () {
+  return ShitcoinPlugin.makePlugin({io})
+}
+
+function makeEngine () {
+  return new Promise((resolve, reject) => {
+    makePlugin().then((plugin) => {
+      const type = 'wallet:shitcoin'
+      const keys = plugin.createPrivateKey(type)
+      const walletInfo = {
+        type,
+        keys
+      }
+      const publicKeys = plugin.derivePublicKey(walletInfo)
+      const keys2 = Object.assign({}, walletInfo.keys, publicKeys)
+      walletInfo.keys = keys2
+      const engine = plugin.makeEngine(walletInfo)
+      resolve(engine)
+    }).catch(error => {
+      reject(error)
+    })
+  })
+}
 
 describe('Plugin', function () {
   it('Get currency info', function () {
-    ShitcoinPlugin.makePlugin({io}).then((shitcoinPlugin) => {
-      assert.equal(shitcoinPlugin.currencyInfo.currencyCode, 'TRD')
-      plugin = shitcoinPlugin
-    })
-  })
-  it('Get block height', function () {
-    ShitcoinPlugin.makePlugin({io}).then((shitcoinPlugin) => {
-      const walletInfoPrivate = shitcoinPlugin.createPrivateKey('wallet:shitcoin')
-      const walletInfoPublic = shitcoinPlugin.derivePublicKey(walletInfoPrivate)
-      const keys = Object.assign({}, walletInfoPrivate.keys, walletInfoPublic.keys)
-      const walletInfo = walletInfoPublic
-      walletInfo.keys = keys
-      const engine = shitcoinPlugin.makeEngine(walletInfo)
-
-      engine.startEngine()
-      const height = engine.getBlockHeight()
-      const success = (height === '0' || bns.gt(height, '100000'))
-
-      assert.equal(success, true)
+    makePlugin().then((plugin) => {
+      assert.equal(plugin.currencyInfo.currencyCode, 'TRD')
     })
   })
 })
 
 describe('createPrivateKey', function () {
   it('Create valid key', function () {
-    const walletInfo = plugin.createPrivateKey('wallet:shitcoin')
-    assert.equal(!walletInfo.keys, false)
-    assert.equal(typeof walletInfo.keys.masterPrivateKey, 'string')
-    assert.equal(walletInfo.keys.masterPrivateKey, '0001020304050607')
+    makePlugin().then((plugin) => {
+      const privateKeys = plugin.createPrivateKey('wallet:shitcoin')
+      assert.equal(!privateKeys, false)
+      assert.equal(typeof privateKeys.masterPrivateKey, 'string')
+      assert.equal(privateKeys.masterPrivateKey, 'A7E6EAB74DAFDEDD')
+    })
   })
 })
 
 describe('derivePublicKey', function () {
   it('Valid private key', function () {
-    const walletInfo = plugin.derivePublicKey({
-      type: 'shitcoin',
-      keys: {'masterPrivateKey': '12345678abcd'}
+    makePlugin().then((plugin) => {
+      const walletInfoprivate = {
+        type: 'shitcoin',
+        keys: {'masterPrivateKey': '12345abcde'}
+      }
+      const publicKeys = plugin.derivePublicKey(walletInfoprivate)
+      assert.equal(publicKeys.masterPublicKey.toLowerCase(), 'pub12345abcde'.toLowerCase())
     })
-    assert.equal(walletInfo.keys.masterPublicKey.toLowerCase(), 'pub12345678abcd'.toLowerCase())
   })
 
   it('Invalid key name', function () {
-    assert.throws(() => {
-      plugin.derivePublicKey({
-        type: 'shitcoin',
-        keys: {'masterPrivateKeyz': '12345678abcd'}
+    makePlugin().then((plugin) => {
+      assert.throws(() => {
+        plugin.derivePublicKey({
+          type: 'shitcoin',
+          keys: {'masterPrivateKeyz': '12345abcde'}
+        })
       })
     })
   })
 
   it('Invalid wallet type', function () {
-    assert.throws(() => {
-      plugin.derivePublicKey({
-        type: 'shitzcoin',
-        keys: {'masterPrivateKey': '12345678abcd'}
+    makePlugin().then((plugin) => {
+      assert.throws(() => {
+        plugin.derivePublicKey({
+          type: 'shitcoinz',
+          keys: {'masterPrivateKey': '12345abcde'}
+        })
       })
     })
   })
@@ -79,94 +98,129 @@ describe('derivePublicKey', function () {
 
 describe('parseUri', function () {
   it('address only', function () {
-    const parsedUri = plugin.parseUri('0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, null)
-    assert.equal(parsedUri.currencyCode, null)
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, null)
+      assert.equal(parsedUri.currencyCode, null)
+    })
   })
   it('uri address', function () {
-    const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, null)
-    assert.equal(parsedUri.currencyCode, null)
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, null)
+      assert.equal(parsedUri.currencyCode, null)
+    })
   })
   it('uri address with amount', function () {
-    const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=12345.6789')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, '123456789')
-    assert.equal(parsedUri.currencyCode, 'TRD')
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=12345.6789')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, '123456789')
+      assert.equal(parsedUri.currencyCode, 'TRD')
+    })
   })
   it('uri address with amount & label', function () {
-    const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, '12345678')
-    assert.equal(parsedUri.currencyCode, 'TRD')
-    assert.equal(parsedUri.label, 'Johnny Bitcoin')
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, '12345678')
+      assert.equal(parsedUri.currencyCode, 'TRD')
+      assert.equal(parsedUri.label, 'Johnny Bitcoin')
+    })
   })
   it('uri address with amount, label & message', function () {
-    const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin&message=Hello%20World,%20I%20miss%20you%20!')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, '12345678')
-    assert.equal(parsedUri.currencyCode, 'TRD')
-    assert.equal(parsedUri.label, 'Johnny Bitcoin')
-    assert.equal(parsedUri.message, 'Hello World, I miss you !')
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin&message=Hello%20World,%20I%20miss%20you%20!')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, '12345678')
+      assert.equal(parsedUri.currencyCode, 'TRD')
+      assert.equal(parsedUri.label, 'Johnny Bitcoin')
+      assert.equal(parsedUri.message, 'Hello World, I miss you !')
+    })
   })
   it('uri address with unsupported param', function () {
-    const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?unsupported=helloworld&amount=12345.6789')
-    assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
-    assert.equal(parsedUri.nativeAmount, '123456789')
-    assert.equal(parsedUri.currencyCode, 'TRD')
+    makePlugin().then((plugin) => {
+      const parsedUri = plugin.parseUri('shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?unsupported=helloworld&amount=12345.6789')
+      assert.equal(parsedUri.publicAddress, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+      assert.equal(parsedUri.nativeAmount, '123456789')
+      assert.equal(parsedUri.currencyCode, 'TRD')
+    })
   })
 })
 
 describe('encodeUri', function () {
   it('address only', function () {
-    const encodedUri = plugin.encodeUri({publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8'})
-    assert.equal(encodedUri, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+    makePlugin().then((plugin) => {
+      const encodedUri = plugin.encodeUri({publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8'})
+      assert.equal(encodedUri, '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8')
+    })
   })
   it('address & amount', function () {
-    const encodedUri = plugin.encodeUri(
-      {
-        publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
-        nativeAmount: '12345678'
-      }
-    )
-    assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678')
+    makePlugin().then((plugin) => {
+      const encodedUri = plugin.encodeUri(
+        {
+          publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
+          nativeAmount: '12345678'
+        }
+      )
+      assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678')
+    })
   })
   it('address, amount, and label', function () {
-    const encodedUri = plugin.encodeUri(
-      {
-        publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
-        nativeAmount: '12345678',
-        currencyCode: 'TRD',
-        label: 'Johnny Bitcoin'
-      }
-    )
-    assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin')
-  })
-  it('address, amount, label, & message', function () {
-    const encodedUri = plugin.encodeUri(
-      {
-        publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
-        nativeAmount: '12345678',
-        currencyCode: 'TRD',
-        label: 'Johnny Bitcoin',
-        message: 'Hello World, I miss you !'
-      }
-    )
-    assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin&message=Hello%20World,%20I%20miss%20you%20!')
-  })
-  it('invalid currencyCode', function () {
-    assert.throws(() => {
-      plugin.encodeUri(
+    makePlugin().then((plugin) => {
+      const encodedUri = plugin.encodeUri(
         {
           publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
           nativeAmount: '12345678',
-          currencyCode: 'INVALID',
+          currencyCode: 'TRD',
+          label: 'Johnny Bitcoin'
+        }
+      )
+      assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin')
+    })
+  })
+  it('address, amount, label, & message', function () {
+    makePlugin().then((plugin) => {
+      const encodedUri = plugin.encodeUri(
+        {
+          publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
+          nativeAmount: '12345678',
+          currencyCode: 'TRD',
           label: 'Johnny Bitcoin',
           message: 'Hello World, I miss you !'
         }
       )
+      assert.equal(encodedUri, 'shitcoin:0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8?amount=1234.5678&label=Johnny%20Bitcoin&message=Hello%20World,%20I%20miss%20you%20!')
+    })
+  })
+  it('invalid currencyCode', function () {
+    makePlugin().then((plugin) => {
+      assert.throws(() => {
+        plugin.encodeUri(
+          {
+            publicAddress: '0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8',
+            nativeAmount: '12345678',
+            currencyCode: 'INVALID',
+            label: 'Johnny Bitcoin',
+            message: 'Hello World, I miss you !'
+          }
+        )
+      })
+    })
+  })
+})
+
+describe('Engine', function () {
+  it('startEngine exists', function () {
+    makeEngine().then(engine => {
+      assert.equal(typeof engine.startEngine, 'function')
+    })
+  })
+  it('Make spend', function () {
+    makeEngine().then(engine => {
+      assert.equal(typeof engine.killEngine, 'function')
     })
   })
 })

@@ -58,10 +58,7 @@ class ShitcoinPlugin {
 
         if (type === 'shitcoin') {
           const masterPrivateKey = base16.stringify(io.random(8))
-          return {
-            type: walletType,
-            keys: { masterPrivateKey }
-          }
+          return { masterPrivateKey }
         } else {
           throw new Error('InvalidWalletType')
         }
@@ -70,17 +67,11 @@ class ShitcoinPlugin {
       derivePublicKey: (walletInfo: any) => {
         const type = walletInfo.type.replace('wallet:', '')
         if (type === 'shitcoin') {
-          let info = Object.assign({}, walletInfo)
-          let keys = Object.assign({}, walletInfo.keys)
-
-          if (typeof keys.masterPrivateKey !== 'string') {
+          if (typeof walletInfo.keys.masterPrivateKey !== 'string') {
             throw new Error('InvalidKeyName')
           }
-          const masterPublicKey = 'pub' + keys.masterPrivateKey
-          delete keys.masterPrivateKey
-          keys.masterPublicKey = masterPublicKey
-          info.keys = keys
-          return info
+          const masterPublicKey = 'pub' + walletInfo.keys.masterPrivateKey
+          return { masterPublicKey }
         } else {
           throw new Error('InvalidWalletType')
         }
@@ -98,8 +89,8 @@ class ShitcoinPlugin {
         }
       },
 
-      makeEngine: function (keyInfo:any, opts:any = {}) {
-        const engine = new ShitcoinEngine(io, keyInfo, opts)
+      makeEngine: function (walletInfo:any, opts:any = {}) {
+        const engine = new ShitcoinEngine(io, walletInfo, opts)
         return engine
       },
       parseUri: (uri: string) => {
