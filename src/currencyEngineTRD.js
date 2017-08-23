@@ -747,7 +747,7 @@ export class ShitcoinEngine {
   // asynchronous
   enableTokens (tokens:Array<string>) {
     for (let token of tokens) {
-      if (this.walletLocalData.enabledTokens.indexOf(token) !== -1) {
+      if (this.walletLocalData.enabledTokens.indexOf(token) === -1) {
         this.walletLocalData.enabledTokens.push(token)
       }
     }
