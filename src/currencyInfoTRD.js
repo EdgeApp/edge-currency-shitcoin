@@ -1,7 +1,23 @@
 /* global */
 // @flow
 
-export const txLibInfo = {
+export interface ShitcoinSettings {
+  addressExplorer:string,
+  transactionExplorer:string,
+  denomCurrencyCode:string,
+  shitcoinServers:Array<string>
+}
+
+const defaultSettings:ShitcoinSettings = {
+  addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
+  transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',
+  denomCurrencyCode: 'TRD',
+  shitcoinServers: [
+    'http://shitcoin-az-braz.airbitz.co:8080'
+  ]
+}
+
+export const currencyInfo = {
   supportedTokens: [ 'ANA', 'DOGESHIT', 'HOLYSHIT' ],
 
   getInfo: { // Details of supported currency
@@ -10,8 +26,8 @@ export const txLibInfo = {
     ],
     currencyName: 'Shitcoin',
     currencyCode: 'TRD', // The 3 character code for the currency
-    addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
-    transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',
+    defaultSettings,
+
     denominations: [
       // An array of Objects of the possible denominations for this currency
       {

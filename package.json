@@ -23,6 +23,7 @@
     "biggystring": "^1.0.3",
     "jsonschema": "^1.1.1",
     "rfc4648": "^0.9.1",
+    "sprintf-js": "^1.1.1",
     "uri-js": "^3.0.2"
   },
   "devDependencies": {

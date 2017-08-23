@@ -2,7 +2,7 @@
 // @flow
 
 import { base16 } from 'rfc4648'
-import { txLibInfo } from './currencyInfoTRD.js'
+import { currencyInfo } from './currencyInfoTRD.js'
 import { ShitcoinEngine } from './currencyEngineTRD.js'
 import { parse, serialize } from 'uri-js'
 import { bns } from 'biggystring'
@@ -10,7 +10,7 @@ import { bns } from 'biggystring'
 let io
 
 function getDenomInfo (denom:string) {
-  return txLibInfo.getInfo.denominations.find(element => {
+  return currencyInfo.getInfo.denominations.find(element => {
     return element.name === denom
   })
 }
@@ -52,7 +52,7 @@ class ShitcoinPlugin {
 
     return {
       pluginName: 'shitcoin',
-      currencyInfo: txLibInfo.getInfo,
+      currencyInfo: currencyInfo.getInfo,
 
       createPrivateKey: (walletType: string) => {
         const type = walletType.replace('wallet:', '')

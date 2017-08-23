@@ -3,9 +3,10 @@
  */
 // @flow
 
-import { txLibInfo } from './currencyInfoTRD.js'
+import { currencyInfo, ShitcoinSettings } from './currencyInfoTRD.js'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
+import { sprintf } from 'sprintf-js'
 
 const GAP_LIMIT = 10
 const DATA_STORE_FOLDER = 'txEngineFolder'
@@ -15,10 +16,10 @@ const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
 const SAVE_DATASTORE_MILLISECONDS = 10000
 
-const PRIMARY_CURRENCY = txLibInfo.getInfo.currencyCode
-const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
+const PRIMARY_CURRENCY = currencyInfo.getInfo.currencyCode
+const TOKEN_CODES = [PRIMARY_CURRENCY].concat(currencyInfo.supportedTokens)
 
-const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
+// const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
 // const baseUrl = 'http://localhost:8080/api/'
 
 let io
@@ -46,11 +47,6 @@ async function fetchGet (url:string) {
   return response.json()
 }
 
-async function fetchGetShitcoin (cmd:string, params:string) {
-  const url = baseUrl + cmd + '/' + params
-  return fetchGet(url)
-}
-
 async function fetchPost (cmd:string, body:any) {
   const jsonStr = JSON.stringify(body)
   const response = await io.fetch(cmd, {
@@ -62,11 +58,6 @@ async function fetchPost (cmd:string, body:any) {
     body: jsonStr
   })
   return response.json()
-}
-
-async function fetchPostShitcoin (cmd:string, body:any) {
-  const url = baseUrl + cmd
-  return fetchPost(url, body)
 }
 
 class AddressObject {
@@ -187,6 +178,7 @@ export class ShitcoinEngine {
   walletLocalData:WalletLocalData
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
+  currentSettings:ShitcoinSettings
 
   constructor (_io:any, walletInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
@@ -195,6 +187,12 @@ export class ShitcoinEngine {
     this.walletInfo = walletInfo
     this.abcTxLibCallbacks = callbacks
     this.walletLocalFolder = walletLocalFolder
+
+    if (typeof opts.optionalSettings !== 'undefined') {
+      this.currentSettings = opts.optionalSettings
+    } else {
+      this.currentSettings = currencyInfo.getInfo.defaultSettings
+    }
 
     this.engineOn = false
     this.transactionsDirty = true
@@ -222,13 +220,23 @@ export class ShitcoinEngine {
     }
   }
 
+  async fetchGetShitcoin (cmd:string, params:string) {
+    const url = sprintf('%s/api/%s/%s', this.currentSettings.shitcoinServers[0], cmd, params)
+    return fetchGet(url)
+  }
+
+  async fetchPostShitcoin (cmd:string, body:any) {
+    const url = sprintf('%s/api%s', this.currentSettings.shitcoinServers[0], cmd)
+    return fetchPost(url, body)
+  }
+
   // *************************************
   // Poll on the blockheight
   // *************************************
   async blockHeightInnerLoop () {
     while (this.engineOn) {
       try {
-        const jsonObj = await fetchGetShitcoin('height', '')
+        const jsonObj = await this.fetchGetShitcoin('height', '')
         const valid = validateObject(jsonObj, {
           'type': 'object',
           'properties': {
@@ -288,7 +296,7 @@ export class ShitcoinEngine {
   async processTransactionFromServer (txid:string) {
     let jsonObj
     try {
-      jsonObj = await fetchGetShitcoin('transaction', txid)
+      jsonObj = await this.fetchGetShitcoin('transaction', txid)
     } catch (err) {
       io.console.error('Error fetching transaction')
       io.console.error(err)
@@ -524,7 +532,7 @@ export class ShitcoinEngine {
   async processAddressFromServer (address:string) {
     let jsonObj = {}
     try {
-      jsonObj = await fetchGetShitcoin('address', address)
+      jsonObj = await this.fetchGetShitcoin('address', address)
     } catch (err) {
       io.console.error('Error fetching address: ' + address)
       return 0
@@ -675,6 +683,10 @@ export class ShitcoinEngine {
   // *************************************
   // Public methods
   // *************************************
+
+  updateSettings (settings:ShitcoinSettings) {
+    this.currentSettings = settings
+  }
 
   async startEngine (opts:any = {}) {
     let newData = false
@@ -1068,7 +1080,7 @@ export class ShitcoinEngine {
   // asynchronous
   async broadcastTx (abcTransaction:ABCTransaction) {
     try {
-      const jsonObj = await fetchPostShitcoin('spend', abcTransaction.otherParams)
+      const jsonObj = await this.fetchPostShitcoin('spend', abcTransaction.otherParams)
       // Copy params from returned transaction object to our abcTransaction object
       abcTransaction.blockHeight = jsonObj.blockHeight
       abcTransaction.txid = jsonObj.txid
