@@ -20,6 +20,7 @@
     "url": "git@github.com:Airbitz/airbitz-currency-shitcoin.git"
   },
   "dependencies": {
+    "airbitz-core-js": "git+ssh://git@github.com:Airbitz/airbitz-core-js.git#develop",
     "biggystring": "^1.0.3",
     "jsonschema": "^1.1.1",
     "rfc4648": "^0.9.1",
@@ -42,7 +43,8 @@
     "rimraf": "^2.6.1",
     "rollup": "^0.43.0",
     "rollup-plugin-babel": "^2.7.1",
-    "standard": "^10.0.2"
+    "standard": "^10.0.2",
+    "updot": "^1.0.2"
   },
   "standard": {
     "parser": "babel-eslint",
@@ -57,7 +59,7 @@
     "updot": "updot",
     "prepare": "npm run build",
     "build": "npm run lint && npm run rollup && npm run build:flow",
-    "build:flow": "npm run flow && flow-copy-source -v -i '**/test/**' src lib",
+    "build:flow": "flow-copy-source -v -i '**/test/**' src lib && npm run flow",
     "build:clean": "rimraf lib",
     "cover": "nyc --reporter=lcov --reporter=text --reporter=html --extension .js npm test",
     "lint --fix": "standard '*.js' 'src/**/*.js' 'test/**/*.js' --fix",

@@ -3,7 +3,13 @@
  */
 // @flow
 
-import { currencyInfo, ShitcoinSettings } from './currencyInfoTRD.js'
+import { txLibInfo } from './currencyInfoTRD.js'
+import type {
+  EsCurrencyEngine,
+  EsTransaction,
+  EsCurrencySettings,
+  EsWalletInfo
+} from 'airbitz-core-js'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
 import { sprintf } from 'sprintf-js'
@@ -16,11 +22,8 @@ const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
 const SAVE_DATASTORE_MILLISECONDS = 10000
 
-const PRIMARY_CURRENCY = currencyInfo.getInfo.currencyCode
-const TOKEN_CODES = [PRIMARY_CURRENCY].concat(currencyInfo.supportedTokens)
-
-// const baseUrl = 'http://shitcoin-az-braz.airbitz.co:8080/api/'
-// const baseUrl = 'http://localhost:8080/api/'
+const PRIMARY_CURRENCY = txLibInfo.currencyInfo.currencyCode
+const TOKEN_CODES = [PRIMARY_CURRENCY].concat(txLibInfo.supportedTokens)
 
 let io
 
@@ -72,7 +75,7 @@ class AddressObject {
 }
 
 class WalletLocalData {
-  blockHeight:string
+  blockHeight:number
   masterPublicKey:string
   totalBalances: any
   enabledTokens:Array<string>
@@ -83,14 +86,14 @@ class WalletLocalData {
   unusedAddressIndex:number
 
   constructor (jsonString) {
-    this.blockHeight = '0'
+    this.blockHeight = 0
     this.totalBalances = { TRD: '0', ANA: '0', DOGESHIT: '0', HOLYSHIT: '0' }
 
     // Map of gap limit addresses
     this.gapLimitAddresses = []
     this.transactionsObj = {}
 
-    // Array of ABCTransaction objects sorted by date from newest to oldest
+    // Array of EsTransaction objects sorted by date from newest to oldest
     for (let currencyCode of TOKEN_CODES) {
       this.transactionsObj[currencyCode] = []
     }
@@ -108,7 +111,7 @@ class WalletLocalData {
     if (jsonString !== null) {
       const data = JSON.parse(jsonString)
 
-      if (typeof data.blockHeight === 'string') this.blockHeight = data.blockHeight
+      if (typeof data.blockHeight === 'number') this.blockHeight = data.blockHeight
       if (typeof data.masterPublicKey === 'string') this.masterPublicKey = data.masterPublicKey
       if (typeof data.totalBalances !== 'undefined') this.totalBalances = data.totalBalances
       if (typeof data.enabledTokens !== 'undefined') this.enabledTokens = data.enabledTokens
@@ -131,43 +134,9 @@ class ShitcoinParams {
   }
 }
 
-class ABCTransaction {
-  txid:string
-  date:number
-  currencyCode:string
-  amountSatoshi:number
-  blockHeight:string
-  nativeAmount:string
-  networkFee:string
-  ourReceiveAddresses:Array<string>
-  signedTx:string
-  otherParams:ShitcoinParams
-
-  constructor (txid:string,
-               date:number,
-               currencyCode:string,
-               blockHeight:string,
-               nativeAmount:string,
-               networkFee:string,
-               ourReceiveAddresses:Array<string>,
-               signedTx:string,
-               otherParams:ShitcoinParams) {
-    this.txid = txid
-    this.date = date
-    this.currencyCode = currencyCode
-    this.blockHeight = blockHeight
-    this.nativeAmount = nativeAmount
-    this.amountSatoshi = parseInt(nativeAmount)
-    this.networkFee = networkFee
-    this.ourReceiveAddresses = ourReceiveAddresses
-    this.signedTx = signedTx
-    this.otherParams = otherParams
-  }
-}
-
-export class ShitcoinEngine {
+export class ShitcoinEngine implements EsCurrencyEngine {
   io:any
-  walletInfo:any
+  walletInfo:EsWalletInfo
   abcTxLibCallbacks:any
   walletLocalFolder:any
   engineOn:boolean
@@ -178,7 +147,7 @@ export class ShitcoinEngine {
   walletLocalData:WalletLocalData
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
-  currentSettings:ShitcoinSettings
+  currentSettings:EsCurrencySettings
 
   constructor (_io:any, walletInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
@@ -191,7 +160,7 @@ export class ShitcoinEngine {
     if (typeof opts.optionalSettings !== 'undefined') {
       this.currentSettings = opts.optionalSettings
     } else {
-      this.currentSettings = currencyInfo.getInfo.defaultSettings
+      this.currentSettings = txLibInfo.currencyInfo.defaultSettings
     }
 
     this.engineOn = false
@@ -221,12 +190,12 @@ export class ShitcoinEngine {
   }
 
   async fetchGetShitcoin (cmd:string, params:string) {
-    const url = sprintf('%s/api/%s/%s', this.currentSettings.shitcoinServers[0], cmd, params)
+    const url = sprintf('%s/api/%s/%s', this.currentSettings.otherSettings.shitcoinServers[0], cmd, params)
     return fetchGet(url)
   }
 
   async fetchPostShitcoin (cmd:string, body:any) {
-    const url = sprintf('%s/api%s', this.currentSettings.shitcoinServers[0], cmd)
+    const url = sprintf('%s/api%s', this.currentSettings.otherSettings.shitcoinServers[0], cmd)
     return fetchPost(url, body)
   }
 
@@ -401,18 +370,18 @@ export class ShitcoinEngine {
         receiveAmounts[currencyCode] !== '0' ||
         spendAmounts[currencyCode] !== '0'
       ) {
-        const abcTransaction = new ABCTransaction(
-          jsonObj.txid,
-          jsonObj.txDate,
+        let esTransaction:EsTransaction = {
+          txid: jsonObj.txid,
+          date: jsonObj.txDate,
           currencyCode,
-          jsonObj.blockHeight,
-          nativeAmounts[currencyCode].toString(),
-          jsonObj.networkFee,
+          blockHeight: jsonObj.blockHeight,
+          nativeAmount: nativeAmounts[currencyCode].toString(),
+          networkFee: jsonObj.networkFee,
           ourReceiveAddresses,
-          'iwassignedyoucantrustme',
+          signedTx: 'unsigned_right_now',
           otherParams
-        )
-        this.addTransaction(currencyCode, abcTransaction)
+        }
+        this.addTransaction(currencyCode, esTransaction)
       }
     }
 
@@ -614,28 +583,28 @@ export class ShitcoinEngine {
     })
   }
 
-  sortTxByDate (a:ABCTransaction, b:ABCTransaction) {
+  sortTxByDate (a:EsTransaction, b:EsTransaction) {
     return b.date - a.date
   }
 
-  addTransaction (currencyCode:string, abcTransaction:ABCTransaction) {
+  addTransaction (currencyCode:string, esTransaction:EsTransaction) {
     // Add or update tx in transactionsObj
-    const idx = this.findTransaction(currencyCode, abcTransaction.txid)
+    const idx = this.findTransaction(currencyCode, esTransaction.txid)
 
     if (idx === -1) {
-      io.console.info('addTransaction: adding and sorting:' + abcTransaction.txid)
-      this.walletLocalData.transactionsObj[currencyCode].push(abcTransaction)
+      io.console.info('addTransaction: adding and sorting:' + esTransaction.txid)
+      this.walletLocalData.transactionsObj[currencyCode].push(esTransaction)
 
       // Sort
       this.walletLocalData.transactionsObj[currencyCode].sort(this.sortTxByDate)
       this.walletLocalDataDirty = true
     } else {
       // Update the transaction
-      this.walletLocalData.transactionsObj[currencyCode][idx] = abcTransaction
+      this.walletLocalData.transactionsObj[currencyCode][idx] = esTransaction
       this.walletLocalDataDirty = true
-      io.console.info('addTransaction: updating:' + abcTransaction.txid)
+      io.console.info('addTransaction: updating:' + esTransaction.txid)
     }
-    this.transactionsChangedArray.push(abcTransaction)
+    this.transactionsChangedArray.push(esTransaction)
   }
 
   // *************************************
@@ -684,7 +653,7 @@ export class ShitcoinEngine {
   // Public methods
   // *************************************
 
-  updateSettings (settings:ShitcoinSettings) {
+  updateSettings (settings:EsCurrencySettings) {
     this.currentSettings = settings
   }
 
@@ -733,14 +702,12 @@ export class ShitcoinEngine {
   // Synchronous
   killEngine () {
     // disconnect network connections
-    // clear caches
 
     this.engineOn = false
-    return true
   }
 
   // synchronous
-  getBlockHeight ():string {
+  getBlockHeight ():number {
     return this.walletLocalData.blockHeight
   }
 
@@ -894,7 +861,7 @@ export class ShitcoinEngine {
 
   // asynchronous
   async makeSpend (abcSpendInfo:any) {
-    // returns an ABCTransaction data structure, and checks for valid info
+    // returns an EsTransaction data structure, and checks for valid info
     const valid = validateObject(abcSpendInfo, {
       'type': 'object',
       'properties': {
@@ -921,7 +888,7 @@ export class ShitcoinEngine {
     })
 
     if (!valid) {
-      return (new Error('Error: invalid ABCSpendInfo'))
+      throw (new Error('Error: invalid ABCSpendInfo'))
     }
 
     // ******************************
@@ -944,7 +911,7 @@ export class ShitcoinEngine {
 
     if (typeof abcSpendInfo.currencyCode === 'string') {
       if (!this.getTokenStatus(abcSpendInfo.currencyCode)) {
-        return (new Error('Error: Token not supported or enabled'))
+        throw (new Error('Error: Token not supported or enabled'))
       }
     } else {
       abcSpendInfo.currencyCode = 'TRD'
@@ -1055,37 +1022,38 @@ export class ShitcoinEngine {
 
     const shitcoinParams = new ShitcoinParams(inputs, outputs)
     // **********************************
-    // Create the unsigned ABCTransaction
-    const abcTransaction = new ABCTransaction(
-      '',
-      0,
+    // Create the unsigned EsTransaction
+
+    const esTransaction:EsTransaction = {
+      txid: '',
+      date: 0,
       currencyCode,
-      '0',
-      totalSpends[PRIMARY_CURRENCY],
-      '0',
+      blockHeight: 0,
+      nativeAmount: totalSpends[PRIMARY_CURRENCY],
+      networkFee: '0',
       ourReceiveAddresses,
-      '0',
-      shitcoinParams
-    )
+      signedTx: 'unsigned_right_now',
+      otherParams: shitcoinParams
+    }
 
-    return abcTransaction
+    return esTransaction
   }
 
   // asynchronous
-  async signTx (abcTransaction:ABCTransaction) {
-    abcTransaction.signedTx = 'iwassignedjusttrustme'
-    return (abcTransaction)
+  async signTx (esTransaction:EsTransaction) {
+    esTransaction.signedTx = 'iwassignedjusttrustme'
+    return (esTransaction)
   }
 
   // asynchronous
-  async broadcastTx (abcTransaction:ABCTransaction) {
+  async broadcastTx (esTransaction:EsTransaction) {
     try {
-      const jsonObj = await this.fetchPostShitcoin('spend', abcTransaction.otherParams)
-      // Copy params from returned transaction object to our abcTransaction object
-      abcTransaction.blockHeight = jsonObj.blockHeight
-      abcTransaction.txid = jsonObj.txid
-      abcTransaction.date = jsonObj.txDate
-      return (abcTransaction)
+      const jsonObj = await this.fetchPostShitcoin('spend', esTransaction.otherParams)
+      // Copy params from returned transaction object to our esTransaction object
+      esTransaction.blockHeight = jsonObj.blockHeight
+      esTransaction.txid = jsonObj.txid
+      esTransaction.date = jsonObj.txDate
+      return (esTransaction)
     } catch (err) {
       io.console.error('Error: broadcastTx failed')
       throw new Error(err)
@@ -1093,7 +1061,7 @@ export class ShitcoinEngine {
   }
 
   // asynchronous
-  async saveTx (abcTransaction:ABCTransaction) {
-    this.addTransaction(abcTransaction.currencyCode, abcTransaction)
+  async saveTx (esTransaction:EsTransaction) {
+    this.addTransaction(esTransaction.currencyCode, esTransaction)
   }
 }

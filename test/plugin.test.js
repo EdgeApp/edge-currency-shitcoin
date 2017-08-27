@@ -1,5 +1,5 @@
 /* global describe it */
-const { ShitcoinPlugin } = require('../lib/indexShitcoin.js')
+const { makeShitcoinPlugin } = require('../lib/indexShitcoin.js')
 const assert = require('assert')
 
 const io = {
@@ -19,7 +19,7 @@ const io = {
 }
 
 function makePlugin () {
-  return ShitcoinPlugin.makePlugin({io})
+  return makeShitcoinPlugin({io})
 }
 
 function makeEngine () {
