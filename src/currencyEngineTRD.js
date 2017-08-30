@@ -5,10 +5,10 @@
 
 import { txLibInfo } from './currencyInfoTRD.js'
 import type {
-  EsCurrencyEngine,
-  EsTransaction,
-  EsCurrencySettings,
-  EsWalletInfo
+  AbcCurrencyEngine,
+  AbcTransaction,
+  AbcCurrencySettings,
+  AbcWalletInfo
 } from 'airbitz-core-js'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
@@ -93,7 +93,7 @@ class WalletLocalData {
     this.gapLimitAddresses = []
     this.transactionsObj = {}
 
-    // Array of EsTransaction objects sorted by date from newest to oldest
+    // Array of AbcTransaction objects sorted by date from newest to oldest
     for (let currencyCode of TOKEN_CODES) {
       this.transactionsObj[currencyCode] = []
     }
@@ -134,9 +134,9 @@ class ShitcoinParams {
   }
 }
 
-export class ShitcoinEngine implements EsCurrencyEngine {
+export class ShitcoinEngine implements AbcCurrencyEngine {
   io:any
-  walletInfo:EsWalletInfo
+  walletInfo:AbcWalletInfo
   abcTxLibCallbacks:any
   walletLocalFolder:any
   engineOn:boolean
@@ -147,7 +147,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
   walletLocalData:WalletLocalData
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
-  currentSettings:EsCurrencySettings
+  currentSettings:AbcCurrencySettings
 
   constructor (_io:any, walletInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
@@ -370,7 +370,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
         receiveAmounts[currencyCode] !== '0' ||
         spendAmounts[currencyCode] !== '0'
       ) {
-        let esTransaction:EsTransaction = {
+        let abcTransaction:AbcTransaction = {
           txid: jsonObj.txid,
           date: jsonObj.txDate,
           currencyCode,
@@ -381,7 +381,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
           signedTx: 'unsigned_right_now',
           otherParams
         }
-        this.addTransaction(currencyCode, esTransaction)
+        this.addTransaction(currencyCode, abcTransaction)
       }
     }
 
@@ -583,28 +583,28 @@ export class ShitcoinEngine implements EsCurrencyEngine {
     })
   }
 
-  sortTxByDate (a:EsTransaction, b:EsTransaction) {
+  sortTxByDate (a:AbcTransaction, b:AbcTransaction) {
     return b.date - a.date
   }
 
-  addTransaction (currencyCode:string, esTransaction:EsTransaction) {
+  addTransaction (currencyCode:string, abcTransaction:AbcTransaction) {
     // Add or update tx in transactionsObj
-    const idx = this.findTransaction(currencyCode, esTransaction.txid)
+    const idx = this.findTransaction(currencyCode, abcTransaction.txid)
 
     if (idx === -1) {
-      io.console.info('addTransaction: adding and sorting:' + esTransaction.txid)
-      this.walletLocalData.transactionsObj[currencyCode].push(esTransaction)
+      io.console.info('addTransaction: adding and sorting:' + abcTransaction.txid)
+      this.walletLocalData.transactionsObj[currencyCode].push(abcTransaction)
 
       // Sort
       this.walletLocalData.transactionsObj[currencyCode].sort(this.sortTxByDate)
       this.walletLocalDataDirty = true
     } else {
       // Update the transaction
-      this.walletLocalData.transactionsObj[currencyCode][idx] = esTransaction
+      this.walletLocalData.transactionsObj[currencyCode][idx] = abcTransaction
       this.walletLocalDataDirty = true
-      io.console.info('addTransaction: updating:' + esTransaction.txid)
+      io.console.info('addTransaction: updating:' + abcTransaction.txid)
     }
-    this.transactionsChangedArray.push(esTransaction)
+    this.transactionsChangedArray.push(abcTransaction)
   }
 
   // *************************************
@@ -653,7 +653,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
   // Public methods
   // *************************************
 
-  updateSettings (settings:EsCurrencySettings) {
+  updateSettings (settings:AbcCurrencySettings) {
     this.currentSettings = settings
   }
 
@@ -861,7 +861,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
 
   // asynchronous
   async makeSpend (abcSpendInfo:any) {
-    // returns an EsTransaction data structure, and checks for valid info
+    // returns an AbcTransaction data structure, and checks for valid info
     const valid = validateObject(abcSpendInfo, {
       'type': 'object',
       'properties': {
@@ -1022,9 +1022,9 @@ export class ShitcoinEngine implements EsCurrencyEngine {
 
     const shitcoinParams = new ShitcoinParams(inputs, outputs)
     // **********************************
-    // Create the unsigned EsTransaction
+    // Create the unsigned AbcTransaction
 
-    const esTransaction:EsTransaction = {
+    const abcTransaction:AbcTransaction = {
       txid: '',
       date: 0,
       currencyCode,
@@ -1036,24 +1036,24 @@ export class ShitcoinEngine implements EsCurrencyEngine {
       otherParams: shitcoinParams
     }
 
-    return esTransaction
+    return abcTransaction
   }
 
   // asynchronous
-  async signTx (esTransaction:EsTransaction) {
-    esTransaction.signedTx = 'iwassignedjusttrustme'
-    return (esTransaction)
+  async signTx (abcTransaction:AbcTransaction) {
+    abcTransaction.signedTx = 'iwassignedjusttrustme'
+    return (abcTransaction)
   }
 
   // asynchronous
-  async broadcastTx (esTransaction:EsTransaction) {
+  async broadcastTx (abcTransaction:AbcTransaction) {
     try {
-      const jsonObj = await this.fetchPostShitcoin('spend', esTransaction.otherParams)
-      // Copy params from returned transaction object to our esTransaction object
-      esTransaction.blockHeight = jsonObj.blockHeight
-      esTransaction.txid = jsonObj.txid
-      esTransaction.date = jsonObj.txDate
-      return (esTransaction)
+      const jsonObj = await this.fetchPostShitcoin('spend', abcTransaction.otherParams)
+      // Copy params from returned transaction object to our abcTransaction object
+      abcTransaction.blockHeight = jsonObj.blockHeight
+      abcTransaction.txid = jsonObj.txid
+      abcTransaction.date = jsonObj.txDate
+      return (abcTransaction)
     } catch (err) {
       io.console.error('Error: broadcastTx failed')
       throw new Error(err)
@@ -1061,7 +1061,7 @@ export class ShitcoinEngine implements EsCurrencyEngine {
   }
 
   // asynchronous
-  async saveTx (esTransaction:EsTransaction) {
-    this.addTransaction(esTransaction.currencyCode, esTransaction)
+  async saveTx (abcTransaction:AbcTransaction) {
+    this.addTransaction(abcTransaction.currencyCode, abcTransaction)
   }
 }

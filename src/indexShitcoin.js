@@ -5,11 +5,11 @@ import { base16 } from 'rfc4648'
 import { txLibInfo } from './currencyInfoTRD.js'
 import { ShitcoinEngine } from './currencyEngineTRD.js'
 import type {
-  EsParsedUri,
-  EsEncodeUri,
-  EsCurrencyPlugin,
-  EsWalletInfo,
-  EsCurrencyPluginFactory
+  AbcParsedUri,
+  AbcEncodeUri,
+  AbcCurrencyPlugin,
+  AbcWalletInfo,
+  AbcCurrencyPluginFactory
 } from 'airbitz-core-js'
 import { parse, serialize } from 'uri-js'
 import { bns } from 'biggystring'
@@ -31,11 +31,11 @@ function getParameterByName (param, url) {
   return decodeURIComponent(results[2].replace(/\+/g, ' '))
 }
 
-export class ShitcoinCurrencyPluginFactory implements EsCurrencyPluginFactory {
-  static async makePlugin (opts:any):Promise<EsCurrencyPlugin> {
+export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
+  static async makePlugin (opts:any):Promise<AbcCurrencyPlugin> {
     io = opts.io
 
-    const shitcoinPlugin: EsCurrencyPlugin = {
+    const shitcoinPlugin: AbcCurrencyPlugin = {
       pluginName: 'shitcoin',
       currencyInfo: txLibInfo.currencyInfo,
 
@@ -50,7 +50,7 @@ export class ShitcoinCurrencyPluginFactory implements EsCurrencyPluginFactory {
         }
       },
 
-      derivePublicKey: (walletInfo: EsWalletInfo) => {
+      derivePublicKey: (walletInfo: AbcWalletInfo) => {
         const type = walletInfo.type.replace('wallet:', '')
         if (type === 'shitcoin') {
           if (typeof walletInfo.keys.masterPrivateKey !== 'string') {
@@ -119,26 +119,26 @@ export class ShitcoinCurrencyPluginFactory implements EsCurrencyPluginFactory {
         label = getParameterByName('label', uri)
         message = getParameterByName('message', uri)
 
-        const esParsedUri: EsParsedUri = {
+        const abcParsedUri: AbcParsedUri = {
           publicAddress: address
         }
         if (nativeAmount) {
-          esParsedUri.nativeAmount = nativeAmount
+          abcParsedUri.nativeAmount = nativeAmount
         }
         if (currencyCode) {
-          esParsedUri.currencyCode = currencyCode
+          abcParsedUri.currencyCode = currencyCode
         }
         if (label) {
-          esParsedUri.label = label
+          abcParsedUri.label = label
         }
         if (message) {
-          esParsedUri.message = message
+          abcParsedUri.message = message
         }
 
-        return esParsedUri
+        return abcParsedUri
       },
 
-      encodeUri: (obj: EsEncodeUri) => {
+      encodeUri: (obj: AbcEncodeUri) => {
         if (!obj.publicAddress) {
           throw new Error('InvalidPublicAddressError')
         }

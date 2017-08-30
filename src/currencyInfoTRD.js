@@ -1,7 +1,7 @@
 /* global */
 // @flow
 
-import type { EsCurrencyInfo, EsCurrencySettings } from 'airbitz-core-js'
+import type { AbcCurrencyInfo, AbcCurrencySettings } from 'airbitz-core-js'
 import type { ShitcoinSettings } from './trdTypes.js'
 
 const otherSettings:ShitcoinSettings = {
@@ -10,14 +10,14 @@ const otherSettings:ShitcoinSettings = {
   ]
 }
 
-const defaultSettings:EsCurrencySettings = {
+const defaultSettings:AbcCurrencySettings = {
   addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
   transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',
   denomCurrencyCode: 'mTRD',
   otherSettings
 }
 
-const currencyInfo:EsCurrencyInfo = { // Details of supported currency
+const currencyInfo:AbcCurrencyInfo = { // Details of supported currency
   walletTypes: [
     'wallet:shitcoin'
   ],
