@@ -10,7 +10,7 @@ import type {
   AbcCurrencyPlugin,
   AbcWalletInfo,
   AbcCurrencyPluginFactory
-} from 'airbitz-core-js'
+} from 'airbitz-core-types'
 import { parse, serialize } from 'uri-js'
 import { bns } from 'biggystring'
 

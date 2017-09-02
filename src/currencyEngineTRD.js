@@ -9,7 +9,7 @@ import type {
   AbcTransaction,
   AbcCurrencySettings,
   AbcWalletInfo
-} from 'airbitz-core-js'
+} from 'airbitz-core-types'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
 import { sprintf } from 'sprintf-js'

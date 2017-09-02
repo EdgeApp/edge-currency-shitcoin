@@ -1,7 +1,7 @@
 /* global */
 // @flow
 
-import type { AbcCurrencyInfo, AbcCurrencySettings } from 'airbitz-core-js'
+import type { AbcCurrencyInfo, AbcCurrencySettings } from 'airbitz-core-types'
 import type { ShitcoinSettings } from './trdTypes.js'
 
 const otherSettings:ShitcoinSettings = {
