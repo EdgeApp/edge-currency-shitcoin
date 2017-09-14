@@ -1,20 +1,13 @@
 /* global */
 // @flow
 
-import type { AbcCurrencyInfo, AbcCurrencySettings } from 'airbitz-core-types'
+import type { AbcCurrencyInfo } from 'airbitz-core-types'
 import type { ShitcoinSettings } from './trdTypes.js'
 
-const otherSettings:ShitcoinSettings = {
+const defaultSettings:ShitcoinSettings = {
   shitcoinServers: [
     'http://shitcoin-az-braz.airbitz.co:8080'
   ]
-}
-
-const defaultSettings:AbcCurrencySettings = {
-  addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
-  transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',
-  denomCurrencyCode: 'mTRD',
-  otherSettings
 }
 
 const currencyInfo:AbcCurrencyInfo = { // Details of supported currency
@@ -23,6 +16,8 @@ const currencyInfo:AbcCurrencyInfo = { // Details of supported currency
   ],
   currencyName: 'Shitcoin',
   currencyCode: 'TRD', // The 3 character code for the currency
+  addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
+  transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',
   defaultSettings,
 
   denominations: [

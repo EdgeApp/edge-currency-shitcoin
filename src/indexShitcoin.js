@@ -3,7 +3,7 @@
 
 import { base16 } from 'rfc4648'
 import { txLibInfo } from './currencyInfoTRD.js'
-import { ShitcoinEngine } from './currencyEngineTRD.js'
+import { ShitcoinEngine, WalletLocalData, DATA_STORE_FOLDER, DATA_STORE_FILE } from './currencyEngineTRD.js'
 import type {
   AbcParsedUri,
   AbcEncodeUri,
@@ -31,8 +31,10 @@ function getParameterByName (param, url) {
   return decodeURIComponent(results[2].replace(/\+/g, ' '))
 }
 
-export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
-  static async makePlugin (opts:any):Promise<AbcCurrencyPlugin> {
+export const ShitcoinCurrencyPluginFactory: AbcCurrencyPluginFactory = {
+  pluginType: 'currency',
+
+  async makePlugin (opts:any):Promise<AbcCurrencyPlugin> {
     io = opts.io
 
     const shitcoinPlugin: AbcCurrencyPlugin = {
@@ -43,8 +45,8 @@ export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
         const type = walletType.replace('wallet:', '')
 
         if (type === 'shitcoin') {
-          const masterPrivateKey = base16.stringify(io.random(8))
-          return {masterPrivateKey}
+          const masterPrivateKey = 'tpriv' + base16.stringify(io.random(8))
+          return { masterPrivateKey }
         } else {
           throw new Error('InvalidWalletType')
         }
@@ -56,27 +58,60 @@ export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
           if (typeof walletInfo.keys.masterPrivateKey !== 'string') {
             throw new Error('InvalidKeyName')
           }
-          const masterPublicKey = 'pub' + walletInfo.keys.masterPrivateKey
-          return {masterPublicKey}
+          if (typeof walletInfo.keys.masterPrivateKey === 'string') {
+            if (walletInfo.keys.masterPrivateKey.startsWith('tpriv')) {
+              const masterPublicKey = walletInfo.keys.masterPrivateKey.replace('tpriv', 'tpub')
+              return { masterPublicKey }
+            }
+            throw new Error('InvalidPrivateKey')
+          }
+          throw new Error('InvalidKeyName')
         } else {
           throw new Error('InvalidWalletType')
         }
       },
 
-      // XXX Deprecated. To be removed once Core supports createPrivateKey and derivePublicKey -paulvp
-      createMasterKeys: function (walletType: string) {
-        const type = walletType.replace('wallet:', '')
-        if (type === 'shitcoin') {
-          const masterPrivateKey = base16.stringify(io.random(8))
-          const masterPublicKey = 'pub' + masterPrivateKey
-          return {masterPrivateKey, masterPublicKey}
-        } else {
-          return null
+      async makeEngine (walletInfo: AbcWalletInfo, opts: any = {}):any {
+        const engine = new ShitcoinEngine(io, walletInfo, opts)
+        let newData = false
+        if (opts.resetData === 'true') {
+          newData = true
         }
-      },
 
-      makeEngine: function (keyInfo: any, opts: any = {}) {
-        const engine = new ShitcoinEngine(io, keyInfo, opts)
+        let result = ''
+        if (!newData) {
+          try {
+            result =
+              await engine.walletLocalFolder
+                .folder(DATA_STORE_FOLDER)
+                .file(DATA_STORE_FILE)
+                .getText(DATA_STORE_FOLDER, 'walletLocalData')
+          } catch (err) {
+            io.console.info(err)
+            io.console.info('No walletLocalData setup yet: Failure is ok')
+            newData = true
+          }
+        }
+
+        if (newData) {
+          engine.walletLocalData = new WalletLocalData(null)
+        } else {
+          engine.walletLocalData = new WalletLocalData(result)
+        }
+        engine.walletLocalData.masterPublicKey = engine.walletInfo.keys.masterPublicKey
+
+        if (newData) {
+          try {
+            await engine.walletLocalFolder
+              .folder(DATA_STORE_FOLDER)
+              .file(DATA_STORE_FILE)
+              .setText(JSON.stringify(engine.walletLocalData))
+          } catch (err) {
+            io.console.error('Error writing to localDataStore. Engine not started:' + err)
+            return
+          }
+        }
+
         return engine
       },
       parseUri: (uri: string) => {
@@ -128,11 +163,14 @@ export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
         if (currencyCode) {
           abcParsedUri.currencyCode = currencyCode
         }
-        if (label) {
-          abcParsedUri.label = label
-        }
-        if (message) {
-          abcParsedUri.message = message
+        if (label || message) {
+          abcParsedUri.metadata = {}
+          if (label) {
+            abcParsedUri.metadata.name = label
+          }
+          if (message) {
+            abcParsedUri.metadata.message = message
+          }
         }
 
         return abcParsedUri
@@ -161,11 +199,13 @@ export class ShitcoinCurrencyPluginFactory implements AbcCurrencyPluginFactory {
 
             queryString += 'amount=' + amount.toString() + '&'
           }
-          if (typeof obj.label === 'string') {
-            queryString += 'label=' + obj.label + '&'
-          }
-          if (typeof obj.message === 'string') {
-            queryString += 'message=' + obj.message + '&'
+          if (obj.metadata && (obj.metadata.name || obj.metadata.message)) {
+            if (typeof obj.metadata.name === 'string') {
+              queryString += 'label=' + obj.metadata.name + '&'
+            }
+            if (typeof obj.metadata.message === 'string') {
+              queryString += 'message=' + obj.metadata.message + '&'
+            }
           }
           queryString = queryString.substr(0, queryString.length - 1)
 

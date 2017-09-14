@@ -7,16 +7,17 @@ import { txLibInfo } from './currencyInfoTRD.js'
 import type {
   AbcCurrencyEngine,
   AbcTransaction,
-  AbcCurrencySettings,
   AbcWalletInfo
 } from 'airbitz-core-types'
+import type { ShitcoinSettings } from './trdTypes'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
 import { sprintf } from 'sprintf-js'
 
+export const DATA_STORE_FOLDER = 'txEngineFolder'
+export const DATA_STORE_FILE = 'walletLocalData.json'
+
 const GAP_LIMIT = 10
-const DATA_STORE_FOLDER = 'txEngineFolder'
-const DATA_STORE_FILE = 'walletLocalData.json'
 const ADDRESS_POLL_MILLISECONDS = 20000
 const TRANSACTION_POLL_MILLISECONDS = 3000
 const BLOCKHEIGHT_POLL_MILLISECONDS = 60000
@@ -74,7 +75,7 @@ class AddressObject {
   }
 }
 
-class WalletLocalData {
+export class WalletLocalData {
   blockHeight:number
   masterPublicKey:string
   totalBalances: any
@@ -85,7 +86,7 @@ class WalletLocalData {
   addressArray:Array<AddressObject>
   unusedAddressIndex:number
 
-  constructor (jsonString) {
+  constructor (jsonString:any) {
     this.blockHeight = 0
     this.totalBalances = { TRD: '0', ANA: '0', DOGESHIT: '0', HOLYSHIT: '0' }
 
@@ -147,7 +148,7 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   walletLocalData:WalletLocalData
   walletLocalDataDirty:boolean
   transactionsChangedArray:Array<{}>
-  currentSettings:AbcCurrencySettings
+  currentSettings:ShitcoinSettings
 
   constructor (_io:any, walletInfo:any, opts:any) {
     const { walletLocalFolder, callbacks } = opts
@@ -176,26 +177,13 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   // Private methods
   // *************************************
 
-  engineLoop () {
-    this.engineOn = true
-    try {
-      this.doInitialCallbacks()
-      this.blockHeightInnerLoop()
-      this.checkAddressesInnerLoop()
-      this.checkTransactionsInnerLoop()
-      this.saveWalletLoop()
-    } catch (err) {
-      io.console.error(err)
-    }
-  }
-
   async fetchGetShitcoin (cmd:string, params:string) {
-    const url = sprintf('%s/api/%s/%s', this.currentSettings.otherSettings.shitcoinServers[0], cmd, params)
+    const url = sprintf('%s/api/%s/%s', this.currentSettings.shitcoinServers[0], cmd, params)
     return fetchGet(url)
   }
 
   async fetchPostShitcoin (cmd:string, body:any) {
-    const url = sprintf('%s/api%s', this.currentSettings.otherSettings.shitcoinServers[0], cmd)
+    const url = sprintf('%s/api%s', this.currentSettings.shitcoinServers[0], cmd)
     return fetchPost(url, body)
   }
 
@@ -653,50 +641,37 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   // Public methods
   // *************************************
 
-  updateSettings (settings:AbcCurrencySettings) {
+  updateSettings (settings:any) {
     this.currentSettings = settings
   }
 
   async startEngine (opts:any = {}) {
-    let newData = false
-    if (opts.resetData === 'true') {
-      newData = true
+    this.engineOn = true
+    try {
+      this.doInitialCallbacks()
+    } catch (err) {
+      io.console.error(err)
     }
-
-    let result = ''
-    if (!newData) {
-      try {
-        result =
-          await this.walletLocalFolder
-            .folder(DATA_STORE_FOLDER)
-            .file(DATA_STORE_FILE)
-            .getText(DATA_STORE_FOLDER, 'walletLocalData')
-      } catch (err) {
-        io.console.info(err)
-        io.console.info('No walletLocalData setup yet: Failure is ok')
-        newData = true
-      }
+    try {
+      this.blockHeightInnerLoop()
+    } catch (err) {
+      io.console.error(err)
     }
-
-    if (newData) {
-      this.walletLocalData = new WalletLocalData(null)
-    } else {
-      this.walletLocalData = new WalletLocalData(result)
+    try {
+      this.checkAddressesInnerLoop()
+    } catch (err) {
+      io.console.error(err)
     }
-    this.walletLocalData.masterPublicKey = this.walletInfo.keys.masterPublicKey
-
-    if (newData) {
-      try {
-        await this.walletLocalFolder
-          .folder(DATA_STORE_FOLDER)
-          .file(DATA_STORE_FILE)
-          .setText(JSON.stringify(this.walletLocalData))
-      } catch (err) {
-        io.console.error('Error writing to localDataStore. Engine not started:' + err)
-        return
-      }
+    try {
+      this.checkTransactionsInnerLoop()
+    } catch (err) {
+      io.console.error(err)
     }
-    this.engineLoop()
+    try {
+      this.saveWalletLoop()
+    } catch (err) {
+      io.console.error(err)
+    }
   }
 
   // Synchronous
