@@ -10,7 +10,7 @@ import type {
   AbcCurrencyPlugin,
   AbcWalletInfo,
   AbcCurrencyPluginFactory
-} from 'airbitz-core-types'
+} from 'edge-login'
 import { parse, serialize } from 'uri-js'
 import { bns } from 'biggystring'
 
@@ -31,8 +31,9 @@ function getParameterByName (param, url) {
   return decodeURIComponent(results[2].replace(/\+/g, ' '))
 }
 
-export const ShitcoinCurrencyPluginFactory: AbcCurrencyPluginFactory = {
+export const shitcoinCurrencyPluginFactory: AbcCurrencyPluginFactory = {
   pluginType: 'currency',
+  pluginName: 'shitcoin',
 
   async makePlugin (opts:any):Promise<AbcCurrencyPlugin> {
     io = opts.io
@@ -227,3 +228,7 @@ export const ShitcoinCurrencyPluginFactory: AbcCurrencyPluginFactory = {
     return initPlugin(opts)
   }
 }
+
+// Since plugins are normal objects, their names should be lowercase.
+// We messed up, but we still keep the old name around for compatibility:
+export { shitcoinCurrencyPluginFactory as ShitcoinCurrencyPluginFactory }

@@ -1,7 +1,7 @@
 /* global */
 // @flow
 
-import type { AbcCurrencyInfo } from 'airbitz-core-types'
+import type { AbcCurrencyInfo } from 'edge-login'
 import type { ShitcoinSettings } from './trdTypes.js'
 
 const defaultSettings:ShitcoinSettings = {
@@ -15,6 +15,7 @@ const currencyInfo:AbcCurrencyInfo = { // Details of supported currency
     'wallet:shitcoin'
   ],
   currencyName: 'Shitcoin',
+  pluginName: 'shitcoin',
   currencyCode: 'TRD', // The 3 character code for the currency
   addressExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_addresses/%s',
   transactionExplorer: 'http://shitcoin-az-braz.airbitz.co:5984/_utils/document.html?db_transactions/%s',

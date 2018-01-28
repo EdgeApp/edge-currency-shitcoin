@@ -20,7 +20,6 @@
     "url": "git@github.com:Airbitz/airbitz-currency-shitcoin.git"
   },
   "dependencies": {
-    "airbitz-core-types": "git+ssh://git@github.com/Airbitz/airbitz-core-types.git",
     "biggystring": "^1.0.3",
     "jsonschema": "^1.1.1",
     "rfc4648": "^0.9.1",
@@ -33,6 +32,7 @@
     "babel-preset-flow": "^6.23.0",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
+    "edge-login": "^0.5.0",
     "eslint-plugin-flowtype": "^2.34.1",
     "flow-bin": "^0.49.1",
     "flow-copy-source": "^1.2.1",

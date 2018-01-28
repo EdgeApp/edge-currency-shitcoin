@@ -8,7 +8,7 @@ import type {
   AbcCurrencyEngine,
   AbcTransaction,
   AbcWalletInfo
-} from 'airbitz-core-types'
+} from 'edge-login'
 import type { ShitcoinSettings } from './trdTypes'
 import { validate } from 'jsonschema'
 import { bns } from 'biggystring'
@@ -135,7 +135,7 @@ class ShitcoinParams {
   }
 }
 
-export class ShitcoinEngine implements AbcCurrencyEngine {
+export class ShitcoinEngine {
   io:any
   walletInfo:AbcWalletInfo
   abcTxLibCallbacks:any
@@ -151,6 +151,10 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   currentSettings:ShitcoinSettings
 
   constructor (_io:any, walletInfo:any, opts:any) {
+    // Validate that we are a valid AbcCurrencyEngine:
+    // eslint-disable-next-line no-unused-vars
+    const temp: AbcCurrencyEngine = this
+
     const { walletLocalFolder, callbacks } = opts
 
     io = _io
@@ -677,8 +681,8 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   // Synchronous
   killEngine () {
     // disconnect network connections
-
     this.engineOn = false
+    return Promise.resolve()
   }
 
   // synchronous
@@ -693,6 +697,7 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
         this.walletLocalData.enabledTokens.push(token)
       }
     }
+    return Promise.resolve()
   }
 
   // synchronous
@@ -807,7 +812,9 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
 
   // synchronous
   getFreshAddress (options:any) {
-    return this.addressFromIndex(this.walletLocalData.unusedAddressIndex)
+    return {
+      publicAddress: this.addressFromIndex(this.walletLocalData.unusedAddressIndex)
+    }
   }
 
   // synchronous
@@ -1038,5 +1045,29 @@ export class ShitcoinEngine implements AbcCurrencyEngine {
   // asynchronous
   async saveTx (abcTransaction:AbcTransaction) {
     this.addTransaction(abcTransaction.currencyCode, abcTransaction)
+  }
+
+  // Token manganagement (unimplemented):
+  async disableTokens (tokens: Array<string>) {}
+  async getEnabledTokens () {
+    return []
+  }
+  async addCustomToken (token: any) {}
+
+  // Engine management (unimplemented):
+  async resyncBlockchain () {}
+  dumpData () {
+    return {
+      walletId: '',
+      walletType: '',
+      pluginType: '',
+      data: {}
+    }
+  }
+  getDisplayPrivateSeed () {
+    return ''
+  }
+  getDisplayPublicSeed () {
+    return ''
   }
 }
